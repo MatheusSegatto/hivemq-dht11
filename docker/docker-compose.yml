@@ -4,7 +4,7 @@ services:
     container_name: influxdb
     restart: unless-stopped
     ports:
-      - "8086:8086"
+      - "${INFLUX_PORT:-8086}:8086"
     volumes:
       - influxdb-data:/var/lib/influxdb2
       - influxdb-config:/etc/influxdb2
@@ -32,13 +32,14 @@ services:
       MQTT_HOST: ${MQTT_HOST}
       MQTT_PORT: ${MQTT_PORT}
       MQTT_TOPIC: ${MQTT_TOPIC}
+      MQTT_CLIENT_ID: ${MQTT_CLIENT_ID}
 
   grafana:
     image: grafana/grafana:11.1.0
     container_name: grafana
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${GRAFANA_PORT:-3000}:3000"
     depends_on:
       - influxdb
     volumes:
