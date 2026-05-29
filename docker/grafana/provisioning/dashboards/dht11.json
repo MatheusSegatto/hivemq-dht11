@@ -194,7 +194,7 @@
       "targets": [
         {
           "datasource": { "type": "influxdb", "uid": "influxdb-default" },
-          "query": "from(bucket: \"sensores\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"leituras\")\n  |> last()\n  |> pivot(rowKey: [\"sensor_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")\n  |> keep(columns: [\"sensor_id\", \"temp\", \"umid\", \"_time\"])",
+          "query": "from(bucket: \"sensores\")\n  |> range(start: -10m)\n  |> filter(fn: (r) => r._measurement == \"leituras\")\n  |> filter(fn: (r) => r._field == \"temp\" or r._field == \"umid\")\n  |> filter(fn: (r) => exists r.sensor_id)\n  |> last()\n  |> keep(columns: [\"sensor_id\", \"_field\", \"_value\"])\n  |> pivot(rowKey: [\"sensor_id\"], columnKey: [\"_field\"], valueColumn: \"_value\")",
           "refId": "A"
         }
       ],
