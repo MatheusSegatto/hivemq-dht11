@@ -6,8 +6,16 @@
 
 #include "secrets.h"
 
-#define DHT_PIN D2 // pino de dados do DHT11
+// ===== Sensor DHT =====
+#define DHT_PIN D2 // GPIO4 — pino de dados do DHT11
 #define DHT_TYPE DHT11
+
+// Alimentar o DHT pelos pinos GPIO:
+//   1 -> VCC do sensor no D6 e GND no D7
+//   0 -> sensor alimentado pelos trilhos 3V3/GND da placa
+#define DHT_POWER_VIA_GPIO 0
+#define DHT_PIN_VCC D6 // GPIO12
+#define DHT_PIN_GND D7 // GPIO13
 
 DHT dht(DHT_PIN, DHT_TYPE);
 
@@ -35,7 +43,7 @@ void connectMqtt()
   while (!mqtt.connected())
   {
     Serial.printf("Conectando ao broker %s...", MQTT_HOST);
-    // sem usr/senha
+    // client_id precisa ser unico
     if (mqtt.connect(MQTT_CLIENT_ID))
     {
       Serial.println(" OK");
@@ -50,22 +58,22 @@ void connectMqtt()
 
 void publishReading()
 {
-  float temperatura = dht.readTemperature();
-  float umidade = dht.readHumidity();
+  float temp = dht.readTemperature();
+  float umid = dht.readHumidity();
 
-  if (isnan(temperatura) || isnan(umidade))
+  if (isnan(temp) || isnan(umid))
   {
     Serial.println("Falha ao ler do DHT11");
     return;
   }
 
+  // {"sensor_id": "...", "temp": ..., "umid": ...}
   JsonDocument doc;
-  doc["client_id"] = MQTT_CLIENT_ID;
-  doc["temperatura"] = temperatura;
-  doc["umidade"] = umidade;
-  doc["uptime_ms"] = millis();
+  doc["sensor_id"] = SENSOR_ID;
+  doc["temp"] = temp;
+  doc["umid"] = umid;
 
-  char payload[160];
+  char payload[128];
   size_t n = serializeJson(doc, payload, sizeof(payload));
 
   if (mqtt.publish(MQTT_TOPIC, payload, n))
@@ -82,6 +90,16 @@ void setup()
 {
   Serial.begin(115200);
   delay(100);
+
+#if DHT_POWER_VIA_GPIO
+  // Liga o sensor antes
+  pinMode(DHT_PIN_VCC, OUTPUT);
+  pinMode(DHT_PIN_GND, OUTPUT);
+  digitalWrite(DHT_PIN_VCC, HIGH);
+  digitalWrite(DHT_PIN_GND, LOW);
+  delay(1000);
+#endif
+
   dht.begin();
 
   connectWifi();
